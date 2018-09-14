@@ -1,5 +1,5 @@
 """
-Simple example of usage of Lock in threads.
+Simple example of Lock usage in threads.
 
 Abstract:
 Alice and Bob have some money in Bank accounts.
@@ -9,8 +9,10 @@ Example:
 Alice has 1000 USD.
 Bob has 1000 USD.
 
-Thread 1 wants to transfer 1000 USD from Alice to Bob. Transaction should be approved.
-Thread 2 wants to transfer 1000 USD from Alice to Bob. Transaction should be rejected.
+1. Thread 1 wants to transfer 1000 USD from Alice to Bob.
+   Transaction should be approved.
+2. Thread 2 wants to transfer 1000 USD from Alice to Bob.
+   Transaction should be rejected.
 
 Without Lock:
 Thread 1 checks if Alice has 1000 USD. Result: True
@@ -101,7 +103,8 @@ class Bank(object):
 
         This method uses lock to prevent duplication of transaction id.
 
-        :param from_account: account name from which balance will be transferred
+        :param from_account: account name from which balance
+                             will be transferred
         :param to_account: account name to which balance will be transferred
         :param amount: balance amount
         :return: Transaction
@@ -153,16 +156,19 @@ class Worker(Thread):
         while not self.transactions.empty():
             from_account, to_account, amount, result = self.transactions.get()
 
-            transaction = self.bank.create_transaction(from_account, to_account, amount)
+            transaction = self.bank.create_transaction(from_account,
+                                                       to_account,
+                                                       amount)
 
             self.bank.process_transaction(transaction)
 
             if transaction.status == result:
-                print(f"[PASSED] From {from_account} to {to_account} balance {amount} - "
-                      f"{transaction.str_status}")
+                print(f"[PASSED] From {from_account} to {to_account} balance "
+                      f"{amount} - {transaction.str_status}")
             else:
-                print(f"[FAILED] From {from_account} to {to_account} balance {amount} - "
-                      f"{transaction.str_status} expected {result.name}")
+                print(f"[FAILED] From {from_account} to {to_account} balance "
+                      f"{amount} - {transaction.str_status} expected "
+                      f"{result.name}")
 
             self.transactions.task_done()
 

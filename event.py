@@ -1,7 +1,8 @@
 """
-Simple example of Conditions usage in threads.
+Simple example of Events usage in threads.
 
 Abstract:
+The same situation as in condition.py
 Let's imagine we have service that downloads a lot of JSON files and
 process them.
 
@@ -19,48 +20,34 @@ downloaded JSON file and will raise JSONDecodeError.
 from enum import IntEnum
 from queue import Queue
 import json
-from threading import Condition, Thread
+from threading import Event, Thread
 import time
 
 
-USE_CONDITION = True
+USE_EVENT = True
 
 
 class Buffer(object):
     """
     Buffer that stores JSON body and download status.
     """
-    class STATUS(IntEnum):
-        PENDING = 1
-        COMPLETED = 2
-
     def __init__(self, source):
         self.buffer = []
-        self.condition = Condition()
-        self.status = self.STATUS.PENDING
+        self.status = Event()
 
         self.source = source
 
     def add(self, block):
         self.buffer.append(block)
 
-    def completed(self):
-        return self.status == self.STATUS.COMPLETED
-
     def complete(self):
-        self.status = self.STATUS.COMPLETED
-
-        with self.condition:
-            self.condition.notify_all()
+        self.status.set()
 
     def json(self):
-        if not USE_CONDITION:
-            return self.load_json()
+        if USE_EVENT:
+            self.status.wait()
 
-        with self.condition:
-            self.condition.wait_for(self.completed)
-
-            return self.load_json()
+        return self.load_json()
 
     def load_json(self):
         text = ''.join(self.buffer)
@@ -129,15 +116,15 @@ class Processor(Thread):
         self.status = self.STATUS.COMPLETED
 
 
-def start(sources_, use_condition=True):
+def start(sources_, use_event=True):
     sources = Queue()
     buffers = Queue()
 
     for source in sources_:
         sources.put(source)
 
-    global USE_CONDITION
-    USE_CONDITION = use_condition
+    global USE_EVENT
+    USE_EVENT = use_event
 
     processors = [
         Processor(buffers),
@@ -167,4 +154,4 @@ if __name__ == '__main__':
         '"SECOND COMPLETE JSON STRING"',
     ]
 
-    start(SOURCES, use_condition=True)
+    start(SOURCES, use_event=False)
